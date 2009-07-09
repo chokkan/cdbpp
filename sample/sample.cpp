@@ -18,8 +18,6 @@ std::string int2str(int i)
 
 int main(int argc, char *argv[])
 {
-    int i;
-
     // Open a file in binary mode.
     std::ofstream ofs("sample.cdb", std::ios_base::binary);
     if (ofs.fail()) {
@@ -31,11 +29,13 @@ int main(int argc, char *argv[])
         // Create an instance of CDB++ writer.
         cdbpp::builder dbw(ofs);
 
-        // Insert key/value pairs.
-        for (i = 0;i < N;++i) {
+        // Insert key/value pairs to the CDB++ writer.
+        for (int i = 0;i < N;++i) {
             std::string key = int2str(i);
             dbw.put(key.c_str(), key.length(), &i, sizeof(i));
         }
+
+        // Destructing the CDB++ writer flushes the database to the stream.
 
     } catch (const cdbpp::builder_exception& e) {
         // Abort if something went wrong...
@@ -43,37 +43,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Close the database file.
     ofs.close();
 
-    try {
-        std::ifstream ifs("sample.cdb", std::ios_base::binary);
-        if (ifs.fail()) {
-            std::cerr << "ERROR: Failed to open a database file." << std::endl;
-            return 1;
-        }
 
+    // Then, open the database file for reading (with binary mode).
+    std::ifstream ifs("sample.cdb", std::ios_base::binary);
+    if (ifs.fail()) {
+        std::cerr << "ERROR: Failed to open a database file." << std::endl;
+        return 1;
+    }
+
+    try {
+        // Open the database from the input stream.
         cdbpp::cdbpp dbr(ifs);
         if (!dbr.is_open()) {
-            std::cerr << "ERROR: Failed to open a database file." << std::endl;
+            std::cerr << "ERROR: Failed to read a database file." << std::endl;
             return 1;
         }
 
-        for (i = 0;i < N;++i) {
+        // Issue queries to the database.
+        for (int i = 0;i < N;++i) {
             size_t vsize;
             std::string key = int2str(i);
             const int *value = (const int*)dbr.get(key.c_str(), key.length(), &vsize);
             if (value == NULL) {
-                std::cerr << "ERROR: Failed to open a database file." << std::endl;
+                std::cerr << "ERROR: The key is not found." << std::endl;
                 return 1;
             }
 
-            if (*value != i) {
-                std::cerr << "ERROR: Failed to open a database file." << std::endl;
+            if (vsize != sizeof(int) || *value != i) {
+                std::cerr << "ERROR: The key value is wrong." << std::endl;
                 return 1;
             }
         }
 
-    } catch (const cdbpp::cdbm_exception& e) {
+    } catch (const cdbpp::cdbpp_exception& e) {
         // Abort if something went wrong...
         std::cerr << "ERROR: " << e.what() << std::endl;
         return 1;

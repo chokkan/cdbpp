@@ -41,6 +41,9 @@
 #include <stdint.h>
 #include <stdexcept>
 
+namespace cdbpp
+{
+
 /** 
  * \addtogroup cdbpp_api CDB++ API
  * @{
@@ -48,30 +51,20 @@
  *	The CDB++ API.
  */
 
-namespace cdbpp
-{
-
-/**
- * Global constants.
- */
+// Global constants.
 enum {
-    /// Version number.
+    // Version number.
     VERSION = 1,
-    /// The number of hash tables.
+    // The number of hash tables.
     NUM_TABLES = 256,
-    /// A constant for byte-order checking.
+    // A constant for byte-order checking.
     BYTEORDER_CHECK = 0x62445371,
 };
 
 
 
 
-/**
- * C++ port of SuperFastHash function.
- *  This class is a port of the SuperFastHash proposeed by Paul Hsieh.
- *  @author Paul Hsieh
- *  @see    http://www.azillionmonkeys.com/qed/hash.html
- */
+// C++ port of SuperFastHash function.
 class superfasthash :
     public std::binary_function<const void *, size_t, uint32_t>
 {
@@ -135,8 +128,8 @@ public:
 
 struct tableref_t
 {
-    uint32_t    offset;     /// Offset to a hash table.
-    uint32_t    num;        /// Number of elements in the hash table.
+    uint32_t    offset;     // Offset to a hash table.
+    uint32_t    num;        // Number of elements in the hash table.
 };
 
 
@@ -148,7 +141,7 @@ static uint32_t get_data_begin()
 
 
 /**
- * An exception class for the CDBM builder.
+ * Exception class for the CDB++ builder.
  */
 class builder_exception : public std::invalid_argument
 {
@@ -162,7 +155,7 @@ public:
 
 
 /**
- * A CDBM builder.
+ * CDB++ builder.
  */
 class builder
 {
@@ -170,8 +163,8 @@ protected:
     // A bucket structure.
     struct bucket
     {
-	    uint32_t	hash;		/// Hash value of the record.
-	    uint32_t	offset;		/// Offset address to the actual record.
+	    uint32_t	hash;		// Hash value of the record.
+	    uint32_t	offset;		// Offset address to the actual record.
 
         bucket() : hash(0), offset(0)
         {
@@ -195,8 +188,8 @@ public:
     /**
      * Constructs an object.
      *  @param  os          The output stream to which this class write the
-     *                      database. This stream must be opened with the
-     *                      binary mode (std::ios_base::binary).
+     *                      database. This stream must be opened in the
+     *                      binary mode (\c std::ios_base::binary).
      */
     builder(std::ofstream& os) : m_os(os)
     {
@@ -214,7 +207,9 @@ public:
     }
 
     /**
-     * Inserts a pair of key and value (element).
+     * Inserts a pair of key and value to the database.
+     *  Any key in the database should be unique, but this library does not
+     *  check duplicated keys.
      *  @param  key         The pointer to the key.
      *  @param  ksize       The size of the key.
      *  @param  value       The pointer to the value.
@@ -241,9 +236,6 @@ public:
     }
 
 protected:
-    /**
-     * Closes the database.
-     */
     void close()
     {
         // Check the consistency of the stream offset.
@@ -327,41 +319,44 @@ protected:
 
 
 
-class cdbm_exception : public std::invalid_argument
+/**
+ * Exception class for the CDB++ reader.
+ */
+class cdbpp_exception : public std::invalid_argument
 {
 public:
-    cdbm_exception(const std::string& msg)
+    cdbpp_exception(const std::string& msg)
         : std::invalid_argument(msg)
     {
     }
 };
 
 /**
- * A CDBM reader.
+ * CDB++ reader.
  */
 class cdbpp
 {
 protected:
     struct bucket_t
     {
-	    uint32_t	hash;		    /// Hash value of the record.
-	    uint32_t	offset;		    /// Offset address to the actual record.
+	    uint32_t	hash;		    // Hash value of the record.
+	    uint32_t	offset;		    // Offset address to the actual record.
     };
 
 
     struct hashtable_t
     {
-        uint32_t        num;            /// Number of elements in the table.
-	    const bucket_t* buckets;        /// Buckets (array of bucket).
+        uint32_t        num;            // Number of elements in the table.
+	    const bucket_t* buckets;        // Buckets (array of bucket).
     };
 
 
 protected:
-	const uint8_t*  m_buffer;           /// Pointer to the memory block.
-	size_t          m_size;             /// Size of the memory block.
-    bool            m_own;              /// 
+	const uint8_t*  m_buffer;           // Pointer to the memory block.
+	size_t          m_size;             // Size of the memory block.
+    bool            m_own;              // 
 
-	hashtable_t     m_ht[NUM_TABLES];   /// Hash tables.
+	hashtable_t     m_ht[NUM_TABLES];   // Hash tables.
     size_t          m_n;
 
 public:
@@ -374,17 +369,23 @@ public:
     }
 
     /**
-     * Constructs an object by opening a database.
+     * Constructs an object by opening a database on memory.
      *  @param  buffer      The pointer to the memory image of the database.
      *  @param  size        The size of the memory image.
+     *  @param  own         If this is set to \c true, this library will call
+     *                      delete[] when the database is closed.
      */
-    cdbpp(const void *buffer, size_t size)
+    cdbpp(const void *buffer, size_t size, bool own)
         : m_buffer(NULL), m_size(0), m_own(false)
     {
-        open(buffer, size);
+        this->open(buffer, size, own);
     }
 
-
+    /**
+     * Constructs an object by opening a database from an input stream.
+     *  @param  ifs         The input stream from which this library reads
+     *                      a database.
+     */
     cdbpp(std::ifstream& ifs)
         : m_buffer(NULL), m_size(0), m_own(false)
     {
@@ -410,7 +411,7 @@ public:
     }
 
     /**
-     * Gets the number of elements in the database.
+     * Obtains the number of elements in the database.
      *  @return size_t          The number of elements.
      */
     size_t size() const
@@ -429,9 +430,9 @@ public:
     }
 
     /**
-     * Opens the database from a memory image.
-     *  @param  buffer      The pointer to the memory image of the database.
-     *  @param  size        The size of the memory image.
+     * Opens the database from an input stream.
+     *  @param  ifs         The input stream from which this library reads
+     *                      a database.
      */
     size_t open(std::ifstream& ifs)
     {
@@ -455,14 +456,15 @@ public:
             goto error_exit;
         }
 
+        // Allocate a memory block for the chunk.
         uint32_t chunk_size = read_uint32(reinterpret_cast<uint8_t*>(size));
         uint8_t* block = new uint8_t[chunk_size];
 
+        // Read the memory image from the stream.
         ifs.seekg(0, std::ios_base::beg);
         if (ifs.fail()) {
             goto error_exit;
         }
-
         ifs.read(reinterpret_cast<char*>(block), chunk_size);
         if (ifs.fail()) {
             goto error_exit;
@@ -479,6 +481,8 @@ error_exit:
      * Opens the database from a memory image.
      *  @param  buffer      The pointer to the memory image of the database.
      *  @param  size        The size of the memory image.
+     *  @param  own         If this is set to \c true, this library will call
+     *                      delete[] when the database is closed.
      */
     size_t open(const void *buffer, size_t size, bool own = false)
     {
@@ -486,12 +490,12 @@ error_exit:
 
 	    // Make sure that the size of the chunk is larger than the minimum size.
 	    if (size < get_data_begin()) {
-            throw cdbm_exception("The memory image is smaller than a chunk header.");
+            throw cdbpp_exception("The memory image is smaller than a chunk header.");
 	    }
 
         // Check the chunk identifier.
         if (memcmp(p, "CDB+", 4) != 0) {
-            throw cdbm_exception("Incorrect chunk header");
+            throw cdbpp_exception("Incorrect chunk header");
         }
         p += 4;
 
@@ -505,11 +509,11 @@ error_exit:
 
         // Check the byte-order consistency.
         if (byteorder != BYTEORDER_CHECK) {
-            throw cdbm_exception("Inconsistent byte order");
+            throw cdbpp_exception("Inconsistent byte order");
         }
         // Check the chunk size.
         if (size < csize) {
-            throw cdbm_exception("The memory image is smaller than a chunk size.");
+            throw cdbpp_exception("The memory image is smaller than a chunk size.");
         }
 
         // Set memory block and size.
@@ -538,9 +542,12 @@ error_exit:
         return (size_t)csize;
     }
 
+    /**
+     * Closes the database.
+     */
     void close()
     {
-        if (m_own) {
+        if (m_own && m_buffer != NULL) {
             delete[] m_buffer;
         }
         m_buffer = NULL;
@@ -604,33 +611,45 @@ protected:
 
 @section intro Introduction
 
-Constant Database PlusPlus (CDB++) is a C++ database library specialized for
-serialization and retrieval of <i>static</i> associations between keys and
-their values. The database provides several features:
-- <b>Fast look-ups.</b> Retrieving a value for a given key is usually done by
-  accessing two memory blocks. The data structure is equivalent to the
+Constant Database PlusPlus (CDB++) is a C++ implementation of hash database
+specialized for serialization and retrieval of <i>static</i> associations
+between keys and their values. The database provides several features:
+- <b>Fast look-ups.</b> This library implements the data structure of the
   <a href="http://cr.yp.to/cdb.html">Constant Database</a> proposed by
   Daniel J. Bernstein.
 - <b>Low footprint.</b> A CDB++ database consists of a chunk header (16 bytes),
-  hash tables (2048 bytes and 16 bytes per record), and records (8 bytes and
-  key/value size per record).
-- <b>Sophisticated hash function.</b> CDB++ incorporates the fast and
+  hash tables (2048 bytes and 16 bytes per record), and actual records (8 bytes
+  plus key/value size per record).
+- <b>Fast hash function.</b> CDB++ incorporates the fast and
   collision-resistant hash function for strings
   (<a href="http://www.azillionmonkeys.com/qed/hash.html">SuperFastHash function</a>)
   implemented by Paul Hsieh.
 - <b>Chunk format.</b> The structure of CDB++ is designed to store the data in
-  a chunk of a file; CDB++ can be embedded into a file with other arbitrary
-  data.
+  a chunk of a file; CDB++ database can be embedded into a file with other
+  arbitrary data.
+- <b>Simple write interface.</b> CDB++ can serialize a hash database to C++
+  output streams (\c std::ostream).
+- <b>Simple read interface.</b> CDB++ can prepare a hash database from an input
+  stream (\c std::istream) or from a memory block on which a database image is
+  read or memory-mapped from a file.
 - <b>Cross platform.</b> The source code can be compiled on Microsoft Visual
   Studio 2008, GNU C Compiler (gcc), etc.
 - <b>Very simple API.</b> The CDB++ API exposes only a few functions; one can
   use this library just by looking at the sample code.
+- <b>Single C++ header implementation.</b> CDB++ is implemented in a single
+  header file (cdbpp.h); one can use the CDB++ API only by including cdbpp.h
+  in a source code.
 
-CDB++ does not support modifying associations nor checking collisions in keys;
-thus, it may be necessary to use a map object (e.g., \c std::map) to manage
-unique associations between keys and values.
+CDB++ does not support these for simplicity:
+- modifying associations
+- checking collisions in keys
+- compatibility of the database format on different byte-order architectures
 
 @section sample Sample code
+This sample code constructs a database "test.cdb" with 100,000 string/integer
+associations, "000000"/0, "000001"/1, ..., "100000"/100000. Then the code
+issues string queries "000000", ..., "100000", and checks whether the values
+are correct.
 
 @include sample.cpp
 
@@ -642,7 +661,7 @@ CDB++ is distributed under the term of the
 <a href="http://www.opensource.org/licenses/bsd-license.php">modified BSD license</a>.
 
 @section changelog History
-- Version 1.0 (2009-07-08):
+- Version 1.0 (2009-07-09):
 	- Initial release.
 
 @section api Documentation
@@ -651,7 +670,7 @@ CDB++ is distributed under the term of the
 
 @section acknowledgements Acknowledgements
 
-The data structure of the constant database is proposed by
+The data structure of the constant database was originally proposed by
 <a href="http://cr.yp.to/djb.html">Daniel J. Bernstein</a>.
 
 The source code of CDB++ includes the
