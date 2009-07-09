@@ -1,48 +1,48 @@
 
-                       Static Double Array Trie (DASTrie)
+            C++ implementation of Constant Database (CDB++)
 
-                                 Copyright (c) 2008,2009, Naoaki Okazaki 
+                              Copyright (c) 2008,2009, Naoaki Okazaki
 
-=========================================================================
+======================================================================
 1. Introduction
-=========================================================================
-Trie is a data structure of ordered tree that implements an associative array.
-Looking up a record key (usually a string) is very efficient, which takes O(1)
-with respect to the number of stored records n. Trie is also known for efficient
-prefix matching, where the retrieved key strings are the prefixes of a given
-query string.
+======================================================================
+Constant Database PlusPlus (CDB++) is a C++ implementation of hash
+database specialized for serialization and retrieval of static
+associations between keys and their values. This library implements
+the data structure of the Constant Database proposed by Daniel J.
+Bernstein. CDB++ also incorporates the fast and collision-resistant
+hash function for strings (SuperFastHash function) implemented by Paul
+Hsieh. Since CDB++ is implemented in a single header file (cdbpp.h),
+one can use the CDB++ API only by including cdbpp.h in a source code.
 
-Double-array trie, which was proposed by Jun-ichi Aoe in the late 1980s,
-represents a trie in two parallel arrays (BASE and CHECK). Reducing the storage
-usage drastically, double array tries have been used in practical applications
-such as morphological analysis, spelling correction, and Japanese Kana-Kanji
-convertion.
-
-Static Double Array Trie (DASTrie) is an implementation of static double-array
-trie. For the simplicity and efficiency, DASTrie focuses on building a static
-double array from a list of records sorted by dictionary order of keys. DASTrie
-does not provide the functionality for updating an existing trie, whereas the
-original framework of double array supports dynamic updates.
-
-Refer to the DASTrie web site for more information.
-http://www.chokkan.org/software/dastrie/
+Refer to the CDB++ web site for more information.
+http://www.chokkan.org/software/cdbpp/
 
 
 
-=========================================================================
+======================================================================
 2. License
-=========================================================================
-DASTrie is distributed under the term of the modified BSD license.
+======================================================================
+CDB++ is distributed under the term of the modified BSD license.
 Please refer to COPYING file in the distribution.
 
 
 
-=========================================================================
+======================================================================
 3. Acknowledgements
-=========================================================================
-The DASTrie distribution contains "a portable stdint.h", which is released by
-Paul Hsieh under the term of the modified BSD license, for addressing the
-compatibility issue of Microsoft Visual Studio 2008. The original code is
-available at: http://www.azillionmonkeys.com/qed/pstdint.h
+======================================================================
+The data structure of the constant database was originally proposed
+by Daniel J. Bernstein.
+http://cr.yp.to/cdb.html
+
+The source code of CDB++ includes the SuperFastHash function
+implemented by Paul Hsieh.
+http://www.azillionmonkeys.com/qed/hash.html
+
+The CDB++ distribution contains "a portable stdint.h", which is
+released by Paul Hsieh under the term of the modified BSD license, for
+addressing the compatibility issue of Microsoft Visual Studio 2008.
+The original code is available at:
+http://www.azillionmonkeys.com/qed/pstdint.h
 
 $Id: README 14 2008-07-09 15:15:00Z naoaki $
