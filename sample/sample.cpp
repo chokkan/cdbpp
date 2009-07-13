@@ -93,5 +93,6 @@ int main(int argc, char *argv[])
 {
     // Build a sample database and test it.
     bool b = build() && read();
+    std::cout << (b ? "OK" : "FAIL") << std::endl;
     return b ? 0 : 1;
 }
