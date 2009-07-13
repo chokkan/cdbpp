@@ -439,40 +439,42 @@ public:
         char chunk[4], size[4];
         std::istream::pos_type offset = ifs.tellg();
 
-        // Read a chunk identifier.
-        ifs.read(chunk, 4);
-        if (ifs.fail()) {
-            goto error_exit;
-        }
+        do {
+            // Read a chunk identifier.
+            ifs.read(chunk, 4);
+            if (ifs.fail()) {
+                break;
+            }
 
-        // Check the chunk identifier.
-        if (std::strncmp(chunk, "CDB+", 4) != 0) {
-            goto error_exit;
-        }
+            // Check the chunk identifier.
+            if (std::strncmp(chunk, "CDB+", 4) != 0) {
+                break;
+            }
 
-        // Read the size of the chunk.
-        ifs.read(size, 4);
-        if (ifs.fail()) {
-            goto error_exit;
-        }
+            // Read the size of the chunk.
+            ifs.read(size, 4);
+            if (ifs.fail()) {
+                break;
+            }
 
-        // Allocate a memory block for the chunk.
-        uint32_t chunk_size = read_uint32(reinterpret_cast<uint8_t*>(size));
-        uint8_t* block = new uint8_t[chunk_size];
+            // Allocate a memory block for the chunk.
+            uint32_t chunk_size = read_uint32(reinterpret_cast<uint8_t*>(size));
+            uint8_t* block = new uint8_t[chunk_size];
 
-        // Read the memory image from the stream.
-        ifs.seekg(0, std::ios_base::beg);
-        if (ifs.fail()) {
-            goto error_exit;
-        }
-        ifs.read(reinterpret_cast<char*>(block), chunk_size);
-        if (ifs.fail()) {
-            goto error_exit;
-        }
+            // Read the memory image from the stream.
+            ifs.seekg(0, std::ios_base::beg);
+            if (ifs.fail()) {
+                break;
+            }
+            ifs.read(reinterpret_cast<char*>(block), chunk_size);
+            if (ifs.fail()) {
+                break;
+            }
 
-        return this->open(block, chunk_size, true);
+            return this->open(block, chunk_size, true);
 
-error_exit:
+        } while (0);
+
         ifs.seekg(offset, std::ios::beg);
         return 0;
     }
