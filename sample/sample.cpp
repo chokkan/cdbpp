@@ -6,7 +6,8 @@
 
 #include <cdbpp.h>
 
-#define N   100000
+#define N       100000
+#define DBNAME  "sample.cdb"
 
 // Convert an integer to its string representation.
 std::string int2str(int i)
@@ -16,13 +17,13 @@ std::string int2str(int i)
     return ss.str();
 }
 
-int main(int argc, char *argv[])
+bool build()
 {
-    // Open a file in binary mode.
-    std::ofstream ofs("sample.cdb", std::ios_base::binary);
+    // Open a database file for writing (with binary mode).
+    std::ofstream ofs(DBNAME, std::ios_base::binary);
     if (ofs.fail()) {
         std::cerr << "ERROR: Failed to open a database file." << std::endl;
-        return 1;
+        return false;
     }
 
     try {
@@ -40,18 +41,19 @@ int main(int argc, char *argv[])
     } catch (const cdbpp::builder_exception& e) {
         // Abort if something went wrong...
         std::cerr << "ERROR: " << e.what() << std::endl;
-        return 1;
+        return false;
     }
 
-    // Close the database file.
-    ofs.close();
+    return true;
+}
 
-
-    // Then, open the database file for reading (with binary mode).
-    std::ifstream ifs("sample.cdb", std::ios_base::binary);
+bool read()
+{
+    // Open the database file for reading (with binary mode).
+    std::ifstream ifs(DBNAME, std::ios_base::binary);
     if (ifs.fail()) {
         std::cerr << "ERROR: Failed to open a database file." << std::endl;
-        return 1;
+        return false;
     }
 
     try {
@@ -59,7 +61,7 @@ int main(int argc, char *argv[])
         cdbpp::cdbpp dbr(ifs);
         if (!dbr.is_open()) {
             std::cerr << "ERROR: Failed to read a database file." << std::endl;
-            return 1;
+            return false;
         }
 
         // Issue queries to the database.
@@ -69,20 +71,27 @@ int main(int argc, char *argv[])
             const int *value = (const int*)dbr.get(key.c_str(), key.length(), &vsize);
             if (value == NULL) {
                 std::cerr << "ERROR: The key is not found." << std::endl;
-                return 1;
+                return false;
             }
 
             if (vsize != sizeof(int) || *value != i) {
                 std::cerr << "ERROR: The key value is wrong." << std::endl;
-                return 1;
+                return false;
             }
         }
 
     } catch (const cdbpp::cdbpp_exception& e) {
         // Abort if something went wrong...
         std::cerr << "ERROR: " << e.what() << std::endl;
-        return 1;
+        return false;
     }
 
-    return 0;
+    return true;
+}
+
+int main(int argc, char *argv[])
+{
+    // Build a sample database and test it.
+    bool b = build() && read();
+    return b ? 0 : 1;
 }
