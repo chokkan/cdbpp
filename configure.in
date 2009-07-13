@@ -28,7 +28,7 @@ AC_MINIX
 dnl ------------------------------------------------------------------
 dnl Initialization for automake
 dnl ------------------------------------------------------------------
-AM_INIT_AUTOMAKE(cdbpp, 1.0)
+AM_INIT_AUTOMAKE(cdbpp, 1.1)
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 
@@ -61,7 +61,7 @@ dnl ------------------------------------------------------------------
 AC_C_CONST
 AC_CHECK_SIZEOF
 AC_TYPE_SIZE_T
-AC_CHECK_TYPES([uint32_t])
+AC_CHECK_TYPES([uint32_t,int32_t])
 
 dnl ------------------------------------------------------------------
 dnl Checks for debugging mode

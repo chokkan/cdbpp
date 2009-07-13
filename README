@@ -11,8 +11,8 @@ database specialized for serialization and retrieval of static
 associations between keys and their values. This library implements
 the data structure of the Constant Database proposed by Daniel J.
 Bernstein. CDB++ also incorporates the fast and collision-resistant
-hash function for strings (SuperFastHash function) implemented by Paul
-Hsieh. Since CDB++ is implemented in a single header file (cdbpp.h),
+hash function for strings (MurmurHash 2.0) implemented by Austin
+Appleby. Since CDB++ is implemented in a single header file (cdbpp.h),
 one can use the CDB++ API only by including cdbpp.h in a source code.
 
 Refer to the CDB++ web site for more information.
@@ -35,9 +35,9 @@ The data structure of the constant database was originally proposed
 by Daniel J. Bernstein.
 http://cr.yp.to/cdb.html
 
-The source code of CDB++ includes the SuperFastHash function
-implemented by Paul Hsieh.
-http://www.azillionmonkeys.com/qed/hash.html
+The source code of CDB++ includes MurmurHash 2.0 implemented by
+Austin Appleby.
+http://murmurhash.googlepages.com/
 
 The CDB++ distribution contains "a portable stdint.h", which is
 released by Paul Hsieh under the term of the modified BSD license, for

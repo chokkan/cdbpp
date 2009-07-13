@@ -1,3 +1,17 @@
+2009-07-14  Naoaki Okazaki  <okazaki at chokkan org>
+
+	* CDB++ 1.1:
+	- Fixed a compile issue (a patch submitted by Takashi Imamichi).
+	- Replaced SuperFastHash with MurmurHash 2.0 (a patch submitted
+	  by Takashi Imamichi).
+	- Classes cdbpp::builder_base and cdbpp::cdbpp_base taking a
+	  template argument to configure a hash function. Classes
+	  cdbpp::builder and cdbpp::cdbpp are now the synonyms of
+	  cdbpp::builder_base<cdbpp::murmurhash2> and
+	  cdbpp::cdbpp_base<cdbpp::murmurhash2>, respectively.
+	- Split the sample code into build and read functions.
+
+
 2009-07-09  Naoaki Okazaki  <okazaki at chokkan org>
 
 	* CDB++ 1.0:

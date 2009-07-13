@@ -69,6 +69,7 @@ enum {
  *
  *  This code makes the following assumption about how your machine behaves
  *      - We can read a 4-byte value from any address without crashing.
+ *
  *  It also has a few limitations:
  *      - It will not work incrementally.
  *      - It will not produce the same results on little-endian and big-endian
@@ -622,7 +623,9 @@ protected:
     }
 };
 
+/// CDB++ builder with MurmurHash2.
 typedef builder_base<murmurhash2> builder;
+/// CDB++ reader with MurmurHash2.
 typedef cdbpp_base<murmurhash2> cdbpp;
 
 
@@ -646,8 +649,8 @@ between keys and their values. The database provides several features:
   plus key/value size per record).
 - <b>Fast hash function.</b> CDB++ incorporates the fast and
   collision-resistant hash function for strings
-  (<a href="http://www.azillionmonkeys.com/qed/hash.html">SuperFastHash function</a>)
-  implemented by Paul Hsieh.
+  (<a href="http://murmurhash.googlepages.com/">MurmurHash 2.0</a>)
+  implemented by Austin Appleby.
 - <b>Chunk format.</b> The structure of CDB++ is designed to store the data in
   a chunk of a file; CDB++ database can be embedded into a file with other
   arbitrary data.
@@ -671,20 +674,30 @@ CDB++ does not support these for simplicity:
 
 @section sample Sample code
 This sample code constructs a database "test.cdb" with 100,000 string/integer
-associations, "000000"/0, "000001"/1, ..., "100000"/100000. Then the code
-issues string queries "000000", ..., "100000", and checks whether the values
-are correct.
+associations, "000000"/0, "000001"/1, ..., "100000"/100000 (in build function).
+Then the code issues string queries "000000", ..., "100000", and checks
+whether the values are correct (in read function).
 
 @include sample.cpp
 
 @section download Download
 
-- <a href="http://www.chokkan.org/software/dist/cdbpp-1.0.tar.gz">Source code</a>
+- <a href="http://www.chokkan.org/software/dist/cdbpp-1.1.tar.gz">Source code</a>
 
 CDB++ is distributed under the term of the
 <a href="http://www.opensource.org/licenses/bsd-license.php">modified BSD license</a>.
 
 @section changelog History
+- Version 1.1 (2009-07-14):
+    - Fixed a compile issue (a patch submitted by Takashi Imamichi).
+    - Replaced SuperFastHash with MurmurHash 2.0 (a patch submitted by
+      Takashi Imamichi).
+    - Classes cdbpp::builder_base and cdbpp::cdbpp_base taking a template
+      argument to configure a hash function. Classes cdbpp::builder and
+      cdbpp::cdbpp are now the synonyms of
+      \c cdbpp::builder_base<cdbpp::murmurhash2> and
+      \c cdbpp::cdbpp_base<cdbpp::murmurhash2>, respectively.
+    - Split the sample code into build and read functions.
 - Version 1.0 (2009-07-09):
 	- Initial release.
 
@@ -698,8 +711,8 @@ The data structure of the constant database was originally proposed by
 <a href="http://cr.yp.to/djb.html">Daniel J. Bernstein</a>.
 
 The source code of CDB++ includes the
-<a href="http://www.azillionmonkeys.com/qed/hash.html">SuperFastHash function</a>
-implemented by <a href="http://www.azillionmonkeys.com/qed/">Paul Hsieh</a>.
+<a href="http://murmurhash.googlepages.com/">MurmurHash 2.0</a>
+implemented by Austin Appleby.
 
 The CDB++ distribution contains "a portable stdint.h", which is released by
 <a href="http://www.azillionmonkeys.com/qed/">Paul Hsieh</a> under the term of
@@ -712,7 +725,7 @@ http://www.azillionmonkeys.com/qed/pstdint.h
 - <a href="http://www.corpit.ru/mjt/tinycdb.html">TinyCDB - a Constant DataBase</a> by Michael Tokarev.
 - <a href="http://cdbxx.sourceforge.net/">Constant Database C++ Bindings</a> by Stanislav Ievlev.
 - <a href="http://www.unixuser.org/~euske/doc/cdbinternals/index.html">Constant Database (cdb) Internals</a> by Yusuke Shinyama.
-- <a href="http://www.azillionmonkeys.com/qed/hash.html">SuperFastHash function</a> by Paul Hsieh.
+- <a href="http://murmurhash.googlepages.com/">MurmurHash 2.0</a> by Austin Appleby.
 
 */
 
