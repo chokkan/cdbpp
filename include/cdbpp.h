@@ -64,63 +64,79 @@ enum {
 
 
 
-// C++ port of SuperFastHash function.
-class superfasthash :
+/**
+ * MurmurHash2.
+ *
+ *  This code makes the following assumption about how your machine behaves
+ *      - We can read a 4-byte value from any address without crashing.
+ *  It also has a few limitations:
+ *      - It will not work incrementally.
+ *      - It will not produce the same results on little-endian and big-endian
+ *        machines.
+ *
+ *  @author Austin Appleby
+ */
+class murmurhash2 :
     public std::binary_function<const void *, size_t, uint32_t>
 {
 protected:
-    inline static uint16_t get16bits(const char *d)
+    inline static uint32_t get32bits(const char *d)
     {
-        return *reinterpret_cast<const uint16_t*>(d);
+        return *reinterpret_cast<const uint32_t*>(d);
     }
 
 public:
     inline uint32_t operator() (const void *key, size_t size)
     {
-        size_t rem;
-        uint32_t hash = size, tmp;
-        const char *data = reinterpret_cast<const char *>(key);
+	    // 'm' and 'r' are mixing constants generated offline.
+	    // They're not really 'magic', they just happen to work well.
 
-        if (size == 0 || data == NULL) return 0;
+	    const uint32_t m = 0x5bd1e995;
+	    const int32_t r = 24;
 
-        rem = size & 3;
-        size >>= 2;
+	    // Initialize the hash to a 'random' value
 
-        // Main loop
-        for (;size > 0; size--) {
-            hash  += get16bits (data);
-            tmp    = (get16bits (data+2) << 11) ^ hash;
-            hash   = (hash << 16) ^ tmp;
-            data  += 2*sizeof (uint16_t);
-            hash  += hash >> 11;
-        }
+        const uint32_t seed = 0x87654321;
+	    uint32_t h = seed ^ size;
 
-        // Handle end cases
-        switch (rem) {
-            case 3: hash += get16bits (data);
-                    hash ^= hash << 16;
-                    hash ^= data[sizeof (uint16_t)] << 18;
-                    hash += hash >> 11;
-                    break;
-            case 2: hash += get16bits (data);
-                    hash ^= hash << 11;
-                    hash += hash >> 17;
-                    break;
-            case 1: hash += *data;
-                    hash ^= hash << 10;
-                    hash += hash >> 1;
-        }
+	    // Mix 4 bytes at a time into the hash
 
-        // Force "avalanching" of final 127 bits
-        hash ^= hash << 3;
-        hash += hash >> 5;
-        hash ^= hash << 4;
-        hash += hash >> 17;
-        hash ^= hash << 25;
-        hash += hash >> 6;
+	    const char * data = (const char *)key;
 
-        return hash;
-    }
+	    while (size >= 4)
+	    {
+		    uint32_t k = get32bits(data);
+
+		    k *= m; 
+		    k ^= k >> r; 
+		    k *= m; 
+    		
+		    h *= m; 
+		    h ^= k;
+
+		    data += 4;
+		    size -= 4;
+	    }
+    	
+	    // Handle the last few bytes of the input array
+
+	    switch (size)
+	    {
+	    case 3: h ^= data[2] << 16;
+	    case 2: h ^= data[1] << 8;
+	    case 1: h ^= data[0];
+	            h *= m;
+	    };
+
+	    // Do a few final mixes of the hash to ensure the last few
+	    // bytes are well-incorporated.
+
+	    h ^= h >> 13;
+	    h *= m;
+	    h ^= h >> 15;
+
+	    return h;
+    } 
 };
 
 
@@ -157,7 +173,8 @@ public:
 /**
  * CDB++ builder.
  */
-class builder
+template <class hash_function>
+class builder_base
 {
 protected:
     // A bucket structure.
@@ -191,7 +208,7 @@ public:
      *                      database. This stream must be opened in the
      *                      binary mode (\c std::ios_base::binary).
      */
-    builder(std::ofstream& os) : m_os(os)
+    builder_base(std::ofstream& os) : m_os(os)
     {
         m_begin = m_os.tellp();
         m_cur = get_data_begin();
@@ -201,7 +218,7 @@ public:
     /**
      * Destructs an object.
      */
-    virtual ~builder()
+    virtual ~builder_base()
     {
         this->close();
     }
@@ -225,7 +242,7 @@ public:
         m_os.write(reinterpret_cast<const char *>(value), vsize);
 
 	    // Compute the hash value and choose a hash table.
-	    uint32_t hv = superfasthash()(static_cast<const void *>(key), ksize);
+	    uint32_t hv = hash_function()(static_cast<const void *>(key), ksize);
 	    hashtable& ht = m_ht[hv % NUM_TABLES];
 
         // Store the hash value and offset to the hash table.
@@ -334,7 +351,8 @@ public:
 /**
  * CDB++ reader.
  */
-class cdbpp
+template <class hash_function>
+class cdbpp_base
 {
 protected:
     struct bucket_t
@@ -363,7 +381,7 @@ public:
     /**
      * Constructs an object.
      */
-    cdbpp()
+    cdbpp_base()
         : m_buffer(NULL), m_size(0), m_own(false), m_n(0)
     {
     }
@@ -375,7 +393,7 @@ public:
      *  @param  own         If this is set to \c true, this library will call
      *                      delete[] when the database is closed.
      */
-    cdbpp(const void *buffer, size_t size, bool own)
+    cdbpp_base(const void *buffer, size_t size, bool own)
         : m_buffer(NULL), m_size(0), m_own(false), m_n(0)
     {
         this->open(buffer, size, own);
@@ -386,7 +404,7 @@ public:
      *  @param  ifs         The input stream from which this library reads
      *                      a database.
      */
-    cdbpp(std::ifstream& ifs)
+    cdbpp_base(std::ifstream& ifs)
         : m_buffer(NULL), m_size(0), m_own(false), m_n(0)
     {
         this->open(ifs);
@@ -395,7 +413,7 @@ public:
     /**
      * Destructs the object.
      */
-    virtual ~cdbpp()
+    virtual ~cdbpp_base()
     {
         close();
     }
@@ -567,7 +585,7 @@ public:
      */
     const void* get(const void *key, size_t ksize, size_t* vsize) const
     {
-	    uint32_t hv = superfasthash()(key, ksize);
+	    uint32_t hv = hash_function()(key, ksize);
 	    const hashtable_t* ht = &m_ht[hv % NUM_TABLES];
 
 	    if (ht->num && ht->buckets != NULL) {
@@ -603,6 +621,10 @@ protected:
         return *reinterpret_cast<const uint32_t*>(p);
     }
 };
+
+typedef builder_base<murmurhash2> builder;
+typedef cdbpp_base<murmurhash2> cdbpp;
+
 
 };
 
