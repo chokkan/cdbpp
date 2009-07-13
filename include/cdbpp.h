@@ -173,12 +173,9 @@ public:
 /**
  * CDB++ builder.
  */
-template <class hash_function_tmpl>
+template <typename hash_function>
 class builder_base
 {
-public:
-    typedef typename hash_function_tmpl hash_function;
-
 protected:
     // A bucket structure.
     struct bucket
@@ -354,12 +351,9 @@ public:
 /**
  * CDB++ reader.
  */
-template <class hash_function_tmpl>
+template <typename hash_function>
 class cdbpp_base
 {
-public:
-    typedef typename hash_function_tmpl hash_function;
-
 protected:
     struct bucket_t
     {
