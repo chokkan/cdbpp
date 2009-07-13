@@ -86,7 +86,7 @@ protected:
     }
 
 public:
-    inline uint32_t operator() (const void *key, size_t size)
+    inline uint32_t operator() (const void *key, size_t size) const
     {
 	    // 'm' and 'r' are mixing constants generated offline.
 	    // They're not really 'magic', they just happen to work well.
@@ -275,7 +275,7 @@ protected:
                 bucket* dst = new bucket[n];
 
 			    // Put hash elements to the table with the open-address method.
-                hashtable::const_iterator it;
+                typename hashtable::const_iterator it;
                 for (it = ht.begin();it != ht.end();++it) {
                     int k = (it->hash >> 8) % n;
 

@@ -8,9 +8,9 @@ cdbppincludedir = $(includedir)
 cdbppinclude_HEADERS = \
 	include/cdbpp.h
 
-noinst_PROGRAMS = cdbpp
+noinst_PROGRAMS = cdbpp-sample
 
-cdbpp_SOURCES = \
+cdbpp_sample_SOURCES = \
 	sample/sample.cpp
 
 EXTRA_DIST = \
