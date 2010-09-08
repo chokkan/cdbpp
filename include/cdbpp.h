@@ -481,7 +481,7 @@ public:
             uint8_t* block = new uint8_t[chunk_size];
 
             // Read the memory image from the stream.
-            ifs.seekg(0, std::ios_base::beg);
+            ifs.seekg(offset, std::ios_base::beg);
             if (ifs.fail()) {
                 break;
             }
